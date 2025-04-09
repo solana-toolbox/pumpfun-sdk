@@ -84,10 +84,12 @@ pub async fn create_and_buy_with_tip(
     amount_sol: u64,
     slippage_basis_points: Option<u64>,
     priority_fee: PriorityFee,
-) -> Result<Signature, anyhow::Error> {
+) -> Result<(Signature, Pubkey), anyhow::Error> {
     let start_time = Instant::now();
-    let mint = Arc::new(mint);
-    let build_instructions = build_create_and_buy_instructions(rpc.clone(), payer.clone(), mint.clone(), ipfs.clone(), amount_sol, slippage_basis_points, priority_fee.clone()).await?;
+    let mint_keypair = mint;
+    let mint_pubkey = mint_keypair.pubkey();
+    let mint = Arc::new(mint_keypair);
+    let build_instructions = build_create_and_buy_instructions(rpc.clone(), payer.clone(), mint.clone(), ipfs, amount_sol, slippage_basis_points, priority_fee.clone()).await?;
     
     let tip_account = if let Some(first_client) = fee_clients.first() {
         match first_client.get_tip_account().await {
@@ -129,11 +131,11 @@ pub async fn create_and_buy_with_tip(
             if confirmed_signature != signature {
                  println!("Warning: Confirmed signature {} differs from initial signature {}", confirmed_signature, signature);
                  println!("Total create, buy, and confirm operation time: {:?}ms", start_time.elapsed().as_millis());
-                 Ok(confirmed_signature)
+                 Ok((confirmed_signature, mint_pubkey))
             } else {
                  println!("Transaction confirmed successfully!");
                  println!("Total create, buy, and confirm operation time: {:?}ms", start_time.elapsed().as_millis());
-                 Ok(signature)
+                 Ok((signature, mint_pubkey))
             }
         }
         Err(e) => {

@@ -141,7 +141,7 @@ impl PumpFun {
         ipfs: TokenMetadataIPFS,
         amount_sol: u64,
         slippage_basis_points: Option<u64>,
-    ) -> Result<Signature, anyhow::Error> {
+    ) -> Result<(Signature, Pubkey), anyhow::Error> {
         pumpfun::create::create_and_buy_with_tip(
             self.rpc.clone(),
             self.fee_clients.clone(),
